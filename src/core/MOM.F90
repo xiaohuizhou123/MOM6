@@ -588,12 +588,12 @@ subroutine step_MOM(forces, fluxes, sfc_state, Time_start, time_interval, CS, &
     if (CS%UseWaves) then
       ! Update wave information, which is presently kept static over each call to step_mom
       call enable_averaging(time_interval, Time_start + real_to_time(time_interval), CS%diag)
-      call Update_Stokes_Drift(G, GV, Waves, h, forces%ustar)
+      call Update_Stokes_Drift(G, GV, Waves, h, forces%ustar,u,v)
       call disable_averaging(CS%diag)
     endif
   else ! not do_dyn.
     if (CS%UseWaves) & ! Diagnostics are not enabled in this call.
-      call Update_Stokes_Drift(G, GV, Waves, h, fluxes%ustar)
+      call Update_Stokes_Drift(G, GV, Waves, h, fluxes%ustar,u,v)
   endif
 
   if (CS%debug) then

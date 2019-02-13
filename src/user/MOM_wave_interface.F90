@@ -458,7 +458,7 @@ end subroutine Update_Surface_Waves
 
 !> Constructs the Stokes Drift profile on the model grid based on
 !! desired coupling options
-subroutine Update_Stokes_Drift(G,GV,CS,h,ustar)
+subroutine Update_Stokes_Drift(G,GV,CS,h,ustar,u,v)
   type(wave_parameters_CS), &
        pointer       :: CS    !< Wave parameter Control structure
   type(ocean_grid_type), &
@@ -469,6 +469,12 @@ subroutine Update_Stokes_Drift(G,GV,CS,h,ustar)
        intent(in)    :: h     !<Thickness (m or kg/m2)
   real, dimension(SZI_(G),SZJ_(G)), &
        intent(in)    :: ustar !< Wind friction velocity (m/s)
+! Add by XH to calculate La
+  real, dimension(SZIB_(G),SZJ_(G),SZK_(G)), &
+       intent(inout) :: u     !< Velocity i-component (m/s)
+
+  real, dimension(SZI_(G),SZJB_(G),SZK_(G)), &
+       intent(inout) :: v     !< Velocity j-component (m/s)
   ! Local Variables
   real    :: Top, MidPoint, Bottom, one_cm
   real    :: DecayScale
@@ -551,8 +557,9 @@ subroutine Update_Stokes_Drift(G,GV,CS,h,ustar)
               elseif (CS%StkLevelMode==1) then
                 ! Use a numerical integration and then
                 ! divide by layer thickness
-                WN = (2.*PI*CS%Freq_Cen(b))**2 / (GV%g_Earth*GV%m_to_Z**2) !bgr bug-fix missing g
-                CMN_FAC = (exp(2.*WN*Top)-exp(2.*WN*Bottom)) / (2.*WN*(Top-Bottom))
+               ! WN = (2.*PI*CS%Freq_Cen(b))**2 / (GV%g_Earth*GV%m_to_Z**2) !bgr bug-fix missing g
+                WN = (2.*PI*CS%Freq_Cen(b)) / (sqrt(GV%g_Earth*GV%m_to_Z)) !XH bug-fix sqrt 
+               CMN_FAC = (exp(2.*WN*Top)-exp(2.*WN*Bottom)) / (2.*WN*(Top-Bottom))
               endif
             endif
             CS%US_x(II,jj,kk) = CS%US_x(II,jj,kk) + CS%STKx0(II,jj,b)*CMN_FAC
@@ -595,7 +602,8 @@ subroutine Update_Stokes_Drift(G,GV,CS,h,ustar)
               elseif (CS%StkLevelMode==1) then
                 ! Use a numerical integration and then
                 ! divide by layer thickness
-                WN = (2.*PI*CS%Freq_Cen(b))**2 / (GV%g_Earth*GV%m_to_Z**2)
+               ! WN = (2.*PI*CS%Freq_Cen(b))**2 / (GV%g_Earth*GV%m_to_Z**2)
+                WN = (2.*PI*CS%Freq_Cen(b)) /sqrt(GV%g_Earth*GV%m_to_Z) !XH bug fix
                 CMN_FAC = (exp(2.*WN*Top)-exp(2.*WN*Bottom)) / (2.*WN*(Top-Bottom))
               endif
             endif
@@ -665,8 +673,8 @@ subroutine Update_Stokes_Drift(G,GV,CS,h,ustar)
   do ii = G%isc,G%iec
     do jj = G%jsc, G%jec
       Top = h(ii,jj,1)*GV%H_to_Z
-      call get_Langmuir_Number( La, G, GV, Top, ustar(ii,jj), ii, jj, &
-             Override_MA=.false.,WAVES=CS)
+      call get_Langmuir_Number( La, G, GV, Top, ustar(ii,jj), ii, jj, h, u,v, &
+             Override_MA=.True.,WAVES=CS)
       CS%La_turb(ii,jj) = La
     enddo
   enddo
@@ -805,7 +813,8 @@ subroutine Surface_Bands_by_data_override(day_center,G,GV,CS)
       endif
       NUMBANDS = ID
       do B = 1,NumBands
-        CS%WaveNum_Cen(b) = (2.*PI*CS%Freq_Cen(b))**2 / (GV%g_Earth*GV%m_to_Z**2)
+       ! CS%WaveNum_Cen(b) = (2.*PI*CS%Freq_Cen(b))**2 /(GV%g_Earth*GV%m_to_Z**2)
+      CS%WaveNum_Cen(b) = (2.*PI*CS%Freq_Cen(b)) /sqrt(GV%g_Earth*GV%m_to_Z) !wavenumber calculated by XH
       enddo
     endif
 
