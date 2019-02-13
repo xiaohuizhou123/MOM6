@@ -557,8 +557,7 @@ subroutine Update_Stokes_Drift(G,GV,CS,h,ustar,u,v)
               elseif (CS%StkLevelMode==1) then
                 ! Use a numerical integration and then
                 ! divide by layer thickness
-               ! WN = (2.*PI*CS%Freq_Cen(b))**2 / (GV%g_Earth*GV%m_to_Z**2) !bgr bug-fix missing g
-                WN = (2.*PI*CS%Freq_Cen(b)) / (sqrt(GV%g_Earth*GV%m_to_Z)) !XH bug-fix sqrt 
+                WN = (2.*PI*CS%Freq_Cen(b))**2 / (GV%g_Earth*GV%m_to_Z**2) !bgr bug-fix missing g
                CMN_FAC = (exp(2.*WN*Top)-exp(2.*WN*Bottom)) / (2.*WN*(Top-Bottom))
               endif
             endif
@@ -602,8 +601,7 @@ subroutine Update_Stokes_Drift(G,GV,CS,h,ustar,u,v)
               elseif (CS%StkLevelMode==1) then
                 ! Use a numerical integration and then
                 ! divide by layer thickness
-               ! WN = (2.*PI*CS%Freq_Cen(b))**2 / (GV%g_Earth*GV%m_to_Z**2)
-                WN = (2.*PI*CS%Freq_Cen(b)) /sqrt(GV%g_Earth*GV%m_to_Z) !XH bug fix
+                WN = (2.*PI*CS%Freq_Cen(b))**2 / (GV%g_Earth*GV%m_to_Z**2)
                 CMN_FAC = (exp(2.*WN*Top)-exp(2.*WN*Bottom)) / (2.*WN*(Top-Bottom))
               endif
             endif
@@ -813,8 +811,7 @@ subroutine Surface_Bands_by_data_override(day_center,G,GV,CS)
       endif
       NUMBANDS = ID
       do B = 1,NumBands
-       ! CS%WaveNum_Cen(b) = (2.*PI*CS%Freq_Cen(b))**2 /(GV%g_Earth*GV%m_to_Z**2)
-      CS%WaveNum_Cen(b) = (2.*PI*CS%Freq_Cen(b)) /sqrt(GV%g_Earth*GV%m_to_Z) !wavenumber calculated by XH
+        CS%WaveNum_Cen(b) = (2.*PI*CS%Freq_Cen(b))**2 /(GV%g_Earth*GV%m_to_Z**2)
       enddo
     endif
 
