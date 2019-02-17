@@ -138,9 +138,6 @@ type, public :: KPP_CS ; private
   integer :: id_EnhK     = -1, id_EnhVt2   = -1
   integer :: id_EnhW     = -1
   integer :: id_La_SL    = -1
-  integer :: id_ShearDirection_SL    = -1
-  integer :: id_WaveDirection_SL    = -1
-  integer :: id_Misalignment_SL    = -1
   integer :: id_OBLdepth_original = -1
   !!@}
 
@@ -530,14 +527,6 @@ logical function KPP_init(paramFile, G, GV, diag, Time, CS, passive, Waves)
       'Langmuir number enhancement to Vt2 as used by [CVMix] KPP','nondim')
   CS%id_La_SL = register_diag_field('ocean_model', 'KPP_La_SL', diag%axesT1, Time, &
       'Surface-layer Langmuir number computed in [CVMix] KPP','nondim')
-! add by XH
-  CS%id_ShearDirection_SL = register_diag_field('ocean_model', 'KPP_ShearDirection_SL', diag%axesT1, Time, &
-      'Surface-layer ShearDirection computed in [CVMix] KPP','nondim')
-  CS%id_WaveDirection_SL = register_diag_field('ocean_model', 'KPP_WaveDirection_SL', diag%axesT1, Time, &
-      'Surface-layer WaveDirection computed in [CVMix] KPP','nondim')
-
-  CS%id_Misalignment_SL = register_diag_field('ocean_model', 'KPP_Misalignment_SL', diag%axesT1, Time, &
-      'Surface-layer Misalignment computed in [CVMix] KPP','nondim')
   allocate( CS%N( SZI_(G), SZJ_(G), SZK_(G)+1 ) )
   CS%N(:,:,:) = 0.
   allocate( CS%OBLdepth( SZI_(G), SZJ_(G) ) )
@@ -928,7 +917,7 @@ subroutine KPP_compute_BLD(CS, G, GV, h, Temp, Salt, u, v, EOS, uStar, buoyFlux,
   real :: LangEnhW     ! Langmuir enhancement for turbulent velocity scale
   real, dimension(G%ke) :: LangEnhVt2   ! Langmuir enhancement for unresolved shear
   real, dimension(G%ke) :: U_H, V_H
-  real :: MLD_GUESS, LA, ShearDirection, WaveDirection,Misalignment  ! add by XH
+  real :: MLD_GUESS, LA
   real :: surfHuS, surfHvS, surfUs, surfVs, wavedir, currentdir
   real :: VarUp, VarDn, M, VarLo, VarAvg
   real :: H10pct, H20pct,CMNFACT, USx20pct, USy20pct, enhvt2
@@ -1078,12 +1067,9 @@ subroutine KPP_compute_BLD(CS, G, GV, h, Temp, Salt, u, v, EOS, uStar, buoyFlux,
         endif
         !For now get Langmuir number based on prev. MLD (otherwise must compute 3d LA)
         MLD_GUESS = max( 1.*GV%m_to_Z, abs(GV%m_to_Z*CS%OBLdepthprev(i,j) ) )
-        call get_Langmuir_Number( LA,ShearDirection,WaveDirection,Misalignment, G, GV, MLD_guess, surfFricVel, I, J, &
+        call get_Langmuir_Number( LA, G, GV, MLD_guess, surfFricVel, I, J, &
              H=H(i,j,:), U_H=U_H, V_H=V_H, WAVES=WAVES)
         WAVES%La_SL(i,j)=LA
-        WAVES%ShearDirection_SL(i,j)=ShearDirection
-        WAVES%WaveDirection_SL(i,j)=WaveDirection
-        WAVES%Misalignment_SL(i,j)=Misalignment
       endif
 
 

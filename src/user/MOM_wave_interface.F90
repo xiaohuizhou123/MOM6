@@ -86,23 +86,6 @@ type, public :: wave_parameters_CS ; private
                           !! Horizontal -> H points
        La_Turb            !< Aligned Turbulent Langmuir number
                           !! Horizontal -> H points
-! add by Xh
-  real, allocatable, dimension(:,:), public :: &
-       ShearDirection_SL,&            !< SL ShearDirection (directionality factored later)
-                          !! Horizontal -> H points
-       ShearDirection_Turb            !< Aligned Turbulent Langmuir number
-                          !! Horizontal -> H points
-
-  real, allocatable, dimension(:,:), public :: &
-       WaveDirection_SL,&            !< SL WaveDirection (directionality factored later)
-                          !! Horizontal -> H points
-       WaveDirection_Turb            !< Aligned WaveDirection
-                          !! Horizontal -> H points
-  real, allocatable, dimension(:,:), public :: &
-       Misalignment_SL,&            !< SL Misalignment (directionality factored later)
-                          !! Horizontal -> H points
-       Misalignment_Turb            !< 
-                          !! Horizontal -> H points
   real, allocatable, dimension(:,:), public :: &
        US0_x              !< Surface Stokes Drift (zonal, m/s)
                           !! Horizontal -> U points
@@ -136,9 +119,6 @@ type, public :: wave_parameters_CS ; private
   integer, public :: id_surfacestokes_x = -1 , id_surfacestokes_y = -1
   integer, public :: id_3dstokes_x = -1 , id_3dstokes_y = -1
   integer, public :: id_La_turb = -1
-  ! add by XH
-  integer, public :: id_ShearDirection_turb = -1, id_WaveDirection_turb = -1
-  integer, public :: id_Misalignment_turb = -1
   !!@}
 
 end type wave_parameters_CS
@@ -395,20 +375,6 @@ subroutine MOM_wave_interface_init(time,G,GV,param_file, CS, diag )
   allocate(CS%La_turb(G%isc:G%iec,G%jsc:G%jec))
   CS%La_SL(:,:) = 0.0
   CS%La_turb (:,:) = 0.0
-! add by XH
-  allocate(CS%ShearDirection_SL(G%isc:G%iec,G%jsc:G%jec))
-  allocate(CS%ShearDirection_turb(G%isc:G%iec,G%jsc:G%jec))
-  CS%ShearDirection_SL(:,:) = 0.0
-  CS%ShearDirection_turb (:,:) = 0.0
-  allocate(CS%WaveDirection_SL(G%isc:G%iec,G%jsc:G%jec))
-  allocate(CS%WaveDirection_turb(G%isc:G%iec,G%jsc:G%jec))
-  CS%WaveDirection_SL(:,:) = 0.0
-  CS%WaveDirection_turb (:,:) = 0.0
-  allocate(CS%Misalignment_SL(G%isc:G%iec,G%jsc:G%jec))
-  allocate(CS%Misalignment_turb(G%isc:G%iec,G%jsc:G%jec))
-  CS%Misalignment_SL(:,:) = 0.0
-  CS%Misalignment_turb (:,:) = 0.0
-  
   ! d. Viscosity for Stokes drift
   if (CS%StokesMixing) then
     allocate(CS%KvS(G%isd:G%Ied,G%jsd:G%jed,G%ke))
@@ -426,14 +392,6 @@ subroutine MOM_wave_interface_init(time,G,GV,param_file, CS, diag )
        CS%diag%axesCuL,Time,'3d Stokes drift (y)','m s-1')
   CS%id_La_turb = register_diag_field('ocean_model','La_turbulent',&
        CS%diag%axesT1,Time,'Surface (turbulent) Langmuir number','nondim')
-! add by XH
-  CS%id_ShearDirection_turb = register_diag_field('ocean_model','ShearDirection_turbulence',&
-       CS%diag%axesT1,Time,'Surface (turbulent) ShearDirection','nondim')
-  CS%id_WaveDirection_turb = register_diag_field('ocean_model','WaveDirection_turbulence',&
-       CS%diag%axesT1,Time,'Surface (turbulent) WaveDirection','nondim')
-
-  CS%id_Misalignment_turb = register_diag_field('ocean_model','Misalignment_turbulence',&
-       CS%diag%axesT1,Time,'Surface (turbulent) Misalignment','nondim')
    return
 end subroutine MOM_wave_interface_init
 
@@ -514,7 +472,7 @@ subroutine Update_Stokes_Drift(G,GV,CS,h,ustar)
   real    :: Top, MidPoint, Bottom, one_cm
   real    :: DecayScale
   real    :: CMN_FAC, WN, US
-  real    :: La, ShearDirection,WaveDirection,Misalignment
+  real    :: La
   integer :: ii, jj, kk, b, iim1, jjm1
 
   one_cm = 0.01*GV%m_to_Z
@@ -706,12 +664,9 @@ subroutine Update_Stokes_Drift(G,GV,CS,h,ustar)
   do ii = G%isc,G%iec
     do jj = G%jsc, G%jec
       Top = h(ii,jj,1)*GV%H_to_Z
-      call get_Langmuir_Number( La,ShearDirection,WaveDirection,Misalignment, G, GV, Top, ustar(ii,jj), ii, jj, &
+      call get_Langmuir_Number( La, G, GV, Top, ustar(ii,jj), ii, jj, &
              Override_MA=.false.,WAVES=CS)
       CS%La_turb(ii,jj) = La
-      CS%ShearDirection_turb(ii,jj) = ShearDirection
-      CS%WaveDirection_turb(ii,jj) = WaveDirection
-      CS%Misalignment_turb(ii,jj) = Misalignment
     enddo
   enddo
 
@@ -726,12 +681,6 @@ subroutine Update_Stokes_Drift(G,GV,CS,h,ustar)
     call post_data(CS%id_3dstokes_x, CS%us_x, CS%diag)
   if (CS%id_La_turb>0) &
     call post_data(CS%id_La_turb, CS%La_turb, CS%diag)
-  if (CS%id_ShearDirection_turb>0) &
-    call post_data(CS%id_ShearDirection_turb, CS%ShearDirection_turb, CS%diag)
-  if (CS%id_WaveDirection_turb>0) &
-    call post_data(CS%id_WaveDirection_turb, CS%WaveDirection_turb, CS%diag)
-  if (CS%id_Misalignment_turb>0) &
-    call post_data(CS%id_Misalignment_turb, CS%Misalignment_turb, CS%diag)
   return
 end subroutine Update_Stokes_Drift
 
@@ -905,7 +854,7 @@ end subroutine Surface_Bands_by_data_override
 !! Note this can be called with an unallocated Waves pointer, which is okay if we
 !!  want the wind-speed only dependent Langmuir number.  Therefore, we need to be
 !!  careful about what we try to access here.
-subroutine get_Langmuir_Number( LA,ShearDirection,WaveDirection,Misalignment, G, GV, HBL, USTAR, i, j, &
+subroutine get_Langmuir_Number( LA, G, GV, HBL, USTAR, i, j, &
                                 H, U_H, V_H, Override_MA, Waves )
   type(ocean_grid_type), &
        intent(in)     :: G      !< Ocean grid structure
@@ -930,13 +879,9 @@ subroutine get_Langmuir_Number( LA,ShearDirection,WaveDirection,Misalignment, G,
        pointer         :: Waves !< Surface wave control structure.
 
   real, intent(out)    :: LA    !< Langmuir number
-  real, intent(out)    :: ShearDirection    !< ShearDirection WaveDirection Misalignmnet
-  real, intent(out)    :: WaveDirection    !< ShearDirection WaveDirection Misalignmnet
-  real, intent(out)    :: Misalignment    !< ShearDirection WaveDirection Misalignmnet
 !Local Variables
   real :: Top, bottom, midpoint
- ! real :: Dpt_LASL, ShearDirection, WaveDirection
-  real :: Dpt_LASL
+  real :: Dpt_LASL, ShearDirection, WaveDirection
   real :: LA_STKx, LA_STKy, LA_STK
   logical :: ContinueLoop, USE_MA
   real, dimension(SZK_(G)) :: US_H, VS_H
@@ -1007,7 +952,6 @@ subroutine get_Langmuir_Number( LA,ShearDirection,WaveDirection,Misalignment, G,
 
   if (Use_MA) then
     WaveDirection = atan2(LA_STKy,LA_STKx)
-    Misalignment = cos( WaveDirection - ShearDirection)
     LA = LA / sqrt(max(1.e-8,cos( WaveDirection - ShearDirection)))
   endif
 

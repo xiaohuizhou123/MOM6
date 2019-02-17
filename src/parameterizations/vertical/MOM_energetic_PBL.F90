@@ -154,12 +154,7 @@ type, public :: energetic_PBL_CS ; private
     MLD_OBUKHOV, &     !< MLD over Obukhov length
     EKMAN_OBUKHOV, &   !< Ekman over Obukhov length
     LA, &              !< Langmuir number
-    LA_MOD,&             !< Modified Langmuir number
-! Add by XH
-    ShearDirection, &              !< Langmuir number
-    WaveDirection, &              !< Langmuir number
-    Misalignment              !< Langmuir number
-
+    LA_MOD             !< Modified Langmuir number
   real, allocatable, dimension(:,:,:) :: &
     Velocity_Scale, & !< The velocity scale used in getting Kd
     Mixing_Length     !< The length scale used in getting Kd
@@ -356,13 +351,6 @@ subroutine energetic_PBL(h_3d, u_3d, v_3d, tv, fluxes, dt, Kd_int, G, GV, CS, &
   real :: vstar     ! An in-situ turbulent velocity, in m s-1.
   real :: Enhance_M ! An enhancement factor for vstar, based here on Langmuir impact.
   real :: LA        ! The Langmuir number (non-dim)
-! add by XH
-  real :: ShearDirection        ! The ShearDirection (non-dim)
-  real :: WaveDirection         ! The ShearDirection  (non-dim)
-  real :: Misalignment
-
-
-! end by XH  
 
   real :: LAmod     ! A modified Langmuir number accounting for other parameters.
   real :: hbs_here  ! The local minimum of hb_hs and MixLen_shape, times a
@@ -785,7 +773,7 @@ subroutine energetic_PBL(h_3d, u_3d, v_3d, tv, fluxes, dt, Kd_int, G, GV, CS, &
                                  ( (-Bf_Unstable + 1.e-10*GV%m_to_Z**2) +                 &
                                    2.0 *MSTAR_MIX * U_star**3 / MLD_guess )
           if (CS%USE_LT) then
-            call get_Langmuir_Number( LA,ShearDirection,WaveDirection,Misalignment, G, GV, abs(MLD_guess), u_star_mean, i, j, &
+            call get_Langmuir_Number( LA, G, GV, abs(MLD_guess), u_star_mean, i, j, &
                                       H=H(i,:), U_H=U(i,:), V_H=V(i,:), WAVES=WAVES)
             ! 2. Get parameters for modified LA
             MLD_o_Ekman = abs(MLD_guess * iL_Ekman)
