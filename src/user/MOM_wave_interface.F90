@@ -1000,7 +1000,7 @@ subroutine get_Langmuir_Number( LA,ShearDirection,WaveDirection,Misalignment, G,
       Top = Bottom
       MidPoint = Bottom - GV%H_to_Z*0.5*h(kk)
       Bottom = Bottom - GV%H_to_Z*h(kk)
-      if (MidPoint > Dpt_LASL .and. kk > 1 .and. ContinueLoop) then
+      if (MidPoint < Dpt_LASL .and. kk > 1 .and. ContinueLoop) then
          ! If we do Lagrangian Mixing, then we use the Lagrangian shear direction
          !  therefore we need to add the Stokes drift here.
          if (WAVES%LagrangianMixing) then
