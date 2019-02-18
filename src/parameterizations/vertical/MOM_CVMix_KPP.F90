@@ -1324,6 +1324,16 @@ subroutine KPP_compute_BLD(CS, G, GV, h, Temp, Salt, u, v, EOS, uStar, buoyFlux,
     if ((CS%id_La_SL>0) .and. associated(WAVES)) then
       call post_data(CS%id_La_SL,WAVES%La_SL,CS%diag)
     endif
+    ! Add by XH
+   if ((CS%id_ShearDirection_SL>0) .and. associated(WAVES)) then
+      call post_data(CS%id_ShearDirection_SL,WAVES%ShearDirection_SL,CS%diag)
+    endif
+   if ((CS%id_WaveDirection_SL>0) .and. associated(WAVES)) then
+      call post_data(CS%id_WaveDirection_SL,WAVES%WaveDirection_SL,CS%diag)
+    endif
+    if ((CS%id_Misalignment_SL>0) .and. associated(WAVES)) then
+      call post_data(CS%id_Misalignment_SL,WAVES%Misalignment_SL,CS%diag)
+    endif
   endif
 
   ! BLD smoothing:

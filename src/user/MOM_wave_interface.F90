@@ -942,7 +942,8 @@ subroutine get_Langmuir_Number( LA,ShearDirection,WaveDirection,Misalignment, G,
   real, dimension(SZK_(G)) :: US_H, VS_H
   real, dimension(NumBands) :: StkBand_X, StkBand_Y
   integer :: KK, BB
-
+  real :: PI2
+  PI2=2.0*atan(1.0)
  ! Compute averaging depth for Stokes drift (negative)
   Dpt_LASL = min(-0.1*GV%m_to_Z, -LA_FracHBL*HBL)
 
@@ -1007,8 +1008,12 @@ subroutine get_Langmuir_Number( LA,ShearDirection,WaveDirection,Misalignment, G,
 
   if (Use_MA) then
     WaveDirection = atan2(LA_STKy,LA_STKx)
-    Misalignment = cos( WaveDirection - ShearDirection)
+    Misalignment = cos(WaveDirection - ShearDirection)
+    if (Misalignment< 0.0) then
+      LA=LA
+    else
     LA = LA / sqrt(max(1.e-8,cos( WaveDirection - ShearDirection)))
+    endif
   endif
 
   return
