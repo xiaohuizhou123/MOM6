@@ -937,6 +937,7 @@ subroutine get_Langmuir_Number( LA,ShearDirection,WaveDirection,Misalignment, G,
   real :: Top, bottom, midpoint
  ! real :: Dpt_LASL, ShearDirection, WaveDirection
   real :: Dpt_LASL
+  real :: DelUstokes, DelVstokes
   real :: LA_STKx, LA_STKy, LA_STK
   logical :: ContinueLoop, USE_MA
   real, dimension(SZK_(G)) :: US_H, VS_H
@@ -949,24 +950,6 @@ subroutine get_Langmuir_Number( LA,ShearDirection,WaveDirection,Misalignment, G,
 
   USE_MA = LA_Misalignment
   if (present(Override_MA)) USE_MA = Override_MA
-
-  ! If requesting to use misalignment in the Langmuir number compute the Shear Direction
-  if (USE_MA) then
-    if (.not.(present(H).and.present(U_H).and.present(V_H))) then
-      call MOM_error(Fatal,'Get_LA_waves requested to consider misalignment.')
-    endif
-    ContinueLoop = .true.
-    bottom = 0.0
-    do kk = 1,G%ke
-      Top = Bottom
-      MidPoint = Bottom + GV%H_to_Z*0.5*h(kk)
-      Bottom = Bottom + GV%H_to_Z*h(kk)
-      if (MidPoint > Dpt_LASL .and. kk > 1 .and. ContinueLoop) then
-        ShearDirection = atan2(V_H(1)-V_H(kk),U_H(1)-U_H(kk))
-        ContinueLoop = .false.
-      endif
-    enddo
-  endif
 
   if (WaveMethod==TESTPROF) then
     do kk = 1,G%ke
@@ -1005,6 +988,37 @@ subroutine get_Langmuir_Number( LA,ShearDirection,WaveDirection,Misalignment, G,
     ! the curve fit parameterizations.
     LA = max(WAVES%La_min,sqrt(USTAR/(LA_STK+1.e-10)))
   endif
+
+  ! If requesting to use misalignment in the Langmuir number compute the Shear Direction
+  if (USE_MA .and. WAVES%LagrangianMixing) then
+    if (.not.(present(H).and.present(U_H).and.present(V_H))) then
+      call MOM_error(Fatal,'Get_LA_waves requested to consider misalignment.')
+    endif
+    ContinueLoop = .true.
+    bottom = 0.0
+    do kk = 1,G%ke
+      Top = Bottom
+      MidPoint = Bottom - GV%H_to_Z*0.5*h(kk)
+      Bottom = Bottom - GV%H_to_Z*h(kk)
+      if (MidPoint < Dpt_LASL .and. kk > 1 .and. ContinueLoop) then
+         ! If we do Lagrangian Mixing, then we use the Lagrangian shear direction
+         !  therefore we need to add the Stokes drift here.
+         if (WAVES%LagrangianMixing) then
+            DelVstokes = 0.5*(WAVES%US_Y(i,j,1)+WAVES%US_Y(i,j-1,1)-&
+                            WAVES%US_Y(i,j,kk)+WAVES%US_Y(i,j-1,kk))
+            DelUstokes = 0.5*(WAVES%US_X(i,j,1)+WAVES%US_X(i-1,j,1)-&
+                            WAVES%US_X(i,j,kk)+WAVES%US_X(i-1,j,kk))
+         else
+            DelVstokes = 0.0
+            DelUstokes = 0.0
+         endif
+        ShearDirection = atan2(V_H(1)-V_H(kk)+DelVstokes,U_H(1)-U_H(kk)+DelUstokes)
+        ContinueLoop = .false.
+      endif
+    enddo
+  endif
+
+
 
   if (Use_MA) then
     WaveDirection = atan2(LA_STKy,LA_STKx)
